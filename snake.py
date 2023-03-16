@@ -15,6 +15,7 @@ def get_screen():
         draw_edges(org,edges,1)
         draw_edges(org,external_edges,0)
         cv2.imshow('original',org)
+        cv2.imshow('edges',grey_image)
         if cv2.waitKey(25) & 0xff == ord('q'):  
             cv2.destroyAllWindows()
             break
@@ -23,7 +24,7 @@ def draw_edges(img,edges,pos):
     for point in edges:
         x1,y1,x2,y2=point[0]
         if pos==1:
-            cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+            cv2.line(img,(x1,y1),(x2,y2),(255,0,0),2)
         else:
             cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
         
