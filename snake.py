@@ -5,11 +5,12 @@ import time
 import cv2
 
 def screen():
-    time.sleep(3)
+    time.sleep(2)
     while True:
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(0,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
         get_positions(snake_head,apple_cont,board,snake_body)
+
         #Draw
         cv2.imshow('Processed Image',final_img)
         if cv2.waitKey(25) & 0xff == ord('q'):  
