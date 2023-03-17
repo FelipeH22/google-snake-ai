@@ -10,12 +10,13 @@ def screen():
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(0,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
         get_positions(snake_head,apple_cont,board,snake_body)
-
+        """
         #Draw
         cv2.imshow('Processed Image',final_img)
         if cv2.waitKey(25) & 0xff == ord('q'):  
             cv2.destroyAllWindows()
             break
+        """
 
 def get_edges(original):
 
@@ -52,16 +53,6 @@ def get_edges(original):
 
     return original,board_contour,snake_contour,snake_head,apple_cont
 
-
-def draw_circles(img,circles,t):
-    if circles is not None:
-        circles=np.round(circles[0,:]).astype('int')
-        for (x,y,r) in circles:
-            if t==1:
-                cv2.circle(img,(x,y),r,(50,205,50),3)
-            else:
-                cv2.circle(img,(x,y),r,(255,0,0),3)
-
 def get_positions(snake,fruit,board,snake_b):
     snake_pos=get_relative_position(snake)
     fruit_pos=get_relative_position(fruit)
@@ -84,6 +75,5 @@ def get_relative_position(contour):
         pos=np.nanmean(np.asarray(pos),axis=0)
         return pos
     return np.nan
-    
-        
+       
 screen()
