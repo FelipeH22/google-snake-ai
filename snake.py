@@ -6,7 +6,6 @@ import cv2
 
 def screen():
     time.sleep(3)
-    #pkey.keyDown('D')
     while True:
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(0,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
@@ -39,12 +38,13 @@ def get_edges(original):
     snake_head,_=cv2.findContours(head,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
 
     #Get contour of the board
-    board=cv2.Canny(original,100,150)
+    board=cv2.Canny(original,100,300)
+    board=cv2.GaussianBlur(board,(5,5),7)
     board_contour,_=cv2.findContours(board,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 
     #Draw
     original=cv2.cvtColor(original,cv2.COLOR_HSV2RGB)
-    #cv2.drawContours(original,board_contour,-1,0,3)
+    cv2.drawContours(original,board_contour,-1,0,3)
     cv2.drawContours(original,apple_cont,-1,(50,205,50),3)
     cv2.drawContours(original,snake_head,-1,(176,224,230),3)
     cv2.drawContours(original,snake_contour,-1,(0,0,255),3)
