@@ -1,11 +1,15 @@
+import pygetwindow as window
 from PIL import ImageGrab
-import numpy as np
 import pyautogui as pkey
+import numpy as np
 import time
 import cv2
 
 def screen():
-    time.sleep(2)
+    win=window.getWindowsWithTitle('Google - Google Chrome')[0]
+    win.activate()
+    win.maximize()
+    pkey.press("Enter")
     while True:
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(0,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
@@ -17,6 +21,8 @@ def screen():
             cv2.destroyAllWindows()
             break
         """
+        if window.getActiveWindow().title!="Google - Google Chrome":
+            break
 
 def get_edges(original):
 
@@ -56,11 +62,11 @@ def get_edges(original):
 def get_positions(snake,fruit,board,snake_b):
     snake_pos=get_relative_position(snake)
     fruit_pos=get_relative_position(fruit)
-    if type(snake_pos) is np.ndarray and type(fruit_pos) is np.ndarray:#40
-        if fruit_pos[0]-snake_pos[0]>40: pkey.keyDown("D")
-        if fruit_pos[0]-snake_pos[0]<-40: pkey.keyDown("A")
-        if fruit_pos[1]-snake_pos[1]<-40: pkey.keyDown("W")
-        if fruit_pos[1]-snake_pos[1]>40: pkey.keyDown("S")
+    if type(snake_pos) is np.ndarray and type(fruit_pos) is np.ndarray:
+        if fruit_pos[0]-snake_pos[0]>40: pkey.press("D")
+        if fruit_pos[0]-snake_pos[0]<-40: pkey.press("A")
+        if fruit_pos[1]-snake_pos[1]<-40: pkey.press("W")
+        if fruit_pos[1]-snake_pos[1]>40: pkey.press("S")
 
 def get_relative_position(contour):
     if contour is not None:
