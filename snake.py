@@ -8,12 +8,14 @@ import cv2
 def screen():
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
-    win.maximize()
+    #win.maximize()
+    time.sleep(0.5)
     pkey.press("Enter")
     while True:
-        org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(0,230,900,1000))),cv2.COLOR_BGR2RGB)
+        org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
         get_positions(snake_head,apple_cont,board,snake_body)
+        
         """
         #Draw
         cv2.imshow('Processed Image',final_img)
@@ -62,12 +64,12 @@ def get_edges(original):
 def get_positions(snake,fruit,board,snake_b):
     snake_pos=get_relative_position(snake)
     fruit_pos=get_relative_position(fruit)
+    print(snake_pos)
     if type(snake_pos) is np.ndarray and type(fruit_pos) is np.ndarray:
         if fruit_pos[0]-snake_pos[0]>40: pkey.press("D")
         if fruit_pos[0]-snake_pos[0]<-40: pkey.press("A")
         if fruit_pos[1]-snake_pos[1]<-40: pkey.press("W")
         if fruit_pos[1]-snake_pos[1]>40: pkey.press("S")
-
 def get_relative_position(contour):
     if contour is not None:
         pos=list()
