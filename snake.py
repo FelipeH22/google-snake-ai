@@ -2,6 +2,7 @@ import pygetwindow as window
 from PIL import ImageGrab
 import pyautogui as pkey
 import numpy as np
+import math
 import time
 import cv2
 
@@ -11,6 +12,7 @@ def screen():
     #win.maximize()
     time.sleep(0.5)
     pkey.press("Enter")
+    time.sleep(0.3)
     while True:
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
@@ -25,7 +27,6 @@ def screen():
         """
         if window.getActiveWindow().title!="Google - Google Chrome":
             break
-
 def get_edges(original):
 
     #Get contour of the snake body
@@ -62,22 +63,25 @@ def get_edges(original):
     return original,board_contour,snake_contour,snake_head,apple_cont
 
 def get_positions(snake,fruit,board,snake_b):
-    snake_pos=get_relative_position(snake)
-    fruit_pos=get_relative_position(fruit)
-    print(snake_pos)
+    snake_pos=get_relative_position(snake).astype(int)
+    fruit_pos=get_relative_position(fruit).astype(int)
     if type(snake_pos) is np.ndarray and type(fruit_pos) is np.ndarray:
-        if fruit_pos[0]-snake_pos[0]>40: pkey.press("D")
-        if fruit_pos[0]-snake_pos[0]<-40: pkey.press("A")
-        if fruit_pos[1]-snake_pos[1]<-40: pkey.press("W")
-        if fruit_pos[1]-snake_pos[1]>40: pkey.press("S")
+        snake_square=[math.ceil((snake_pos[0]-32)/48),math.ceil((snake_pos[1]-30)/48)]
+        fruit_square=[math.ceil((fruit_pos[0]-32)/48),math.ceil((fruit_pos[1]-30)/48)]
+        print(f"snake: {snake_square} fruit: {fruit_square}")
+        if fruit_square[0]>snake_square[0]: pkey.press("D")
+        if fruit_square[0]<snake_square[0]: pkey.press("A")
+        if fruit_square[1]<snake_square[1]: pkey.press("W")
+        if fruit_square[1]>snake_square[1]: pkey.press("S")
+    
 def get_relative_position(contour):
     if contour is not None:
         pos=list()
         for i in contour:
             M=cv2.moments(i)
             if M['m00']!=0:
-                x=int(M['m10']/M['m00'])
-                y=int(M['m01']/M['m00'])
+                x=M['m10']/M['m00']
+                y=M['m01']/M['m00']
                 if x>=0 and y>=0:
                     pos.append([x,y])
         pos=np.nanmean(np.asarray(pos),axis=0)
