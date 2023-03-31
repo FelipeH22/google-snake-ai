@@ -12,19 +12,19 @@ def screen():
     #win.maximize()
     time.sleep(0.5)
     pkey.press("Enter")
-    time.sleep(0.3)
+    time.sleep(0.2)
     while True:
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
         final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
         get_positions(snake_head,apple_cont,board,snake_body)
         
-        """
-        #Draw
+        
+        """#Draw
         cv2.imshow('Processed Image',final_img)
         if cv2.waitKey(25) & 0xff == ord('q'):  
             cv2.destroyAllWindows()
-            break
-        """
+            break"""
+            
         if window.getActiveWindow().title!="Google - Google Chrome":
             break
 def get_edges(original):
@@ -65,14 +65,15 @@ def get_edges(original):
 def get_positions(snake,fruit,board,snake_b):
     snake_pos=get_relative_position(snake).astype(int)
     fruit_pos=get_relative_position(fruit).astype(int)
-    if type(snake_pos) is np.ndarray and type(fruit_pos) is np.ndarray:
-        snake_square=[math.ceil((snake_pos[0]-32)/48),math.ceil((snake_pos[1]-30)/48)]
-        fruit_square=[math.ceil((fruit_pos[0]-32)/48),math.ceil((fruit_pos[1]-30)/48)]
-        print(f"snake: {snake_square} fruit: {fruit_square}")
-        if fruit_square[0]>snake_square[0]: pkey.press("D")
-        if fruit_square[0]<snake_square[0]: pkey.press("A")
-        if fruit_square[1]<snake_square[1]: pkey.press("W")
-        if fruit_square[1]>snake_square[1]: pkey.press("S")
+    if snake_pos.any()==False or fruit_pos.any()==False:
+        return
+    snake_square=[math.ceil((snake_pos[0]-32)/48.1),math.ceil((snake_pos[1]-30)/48.1)]
+    fruit_square=[math.ceil((fruit_pos[0]-32)/48.1),math.ceil((fruit_pos[1]-30)/48.1)]
+    print(f"snake: {snake_square} fruit: {fruit_square}")
+    if fruit_square[0]>snake_square[0]: pkey.press("D")
+    if fruit_square[0]<snake_square[0]: pkey.press("A")
+    if fruit_square[1]<snake_square[1]: pkey.press("W")
+    if fruit_square[1]>snake_square[1]: pkey.press("S")
     
 def get_relative_position(contour):
     if contour is not None:
@@ -84,8 +85,9 @@ def get_relative_position(contour):
                 y=M['m01']/M['m00']
                 if x>=0 and y>=0:
                     pos.append([x,y])
-        pos=np.nanmean(np.asarray(pos),axis=0)
-        return pos
-    return np.nan
+        if len(pos)>0:
+            pos=np.nanmean(np.asarray(pos),axis=0)
+            return pos
+    return np.array([])
        
 screen()
