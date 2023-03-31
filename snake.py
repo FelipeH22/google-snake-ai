@@ -1,5 +1,6 @@
 import pygetwindow as window
 from PIL import ImageGrab
+from astar import a_star
 import pyautogui as pkey
 import numpy as np
 import math
@@ -15,7 +16,7 @@ def screen():
     time.sleep(0.2)
     while True:
         org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
-        final_img,board,snake_body,snake_head,apple_cont=get_edges(org)
+        board,snake_body,snake_head,apple_cont=get_edges(org)
         snake,fruit=get_positions(snake_head,apple_cont,board,snake_body)
         move(snake,fruit)
         if window.getActiveWindow().title!="Google - Google Chrome":
@@ -23,20 +24,26 @@ def screen():
 
 def move(snake,fruit):
     if snake is None or fruit is None: return
-    print(snake,":",fruit)
-    while fruit[0]!=snake[0] or fruit[1]!=snake[1]:
-        if fruit[0]>snake[0]:
-            snake[0]+=1
-            pkey.press("D")
-        if fruit[0]<snake[0]:
-            snake[0]-=1
-            pkey.press("A")
-        if fruit[1]<snake[1]:
-            snake[1]-=1
-            pkey.press("W")
-        if fruit[1]>snake[1]:
-            snake[1]+=1
-            pkey.press("S")
+    snake,fruit=tuple(snake),tuple(fruit)
+    path=a_star(snake,fruit,[[0 for j in range(16)] for i in range(18)])
+    snake,fruit=list(snake),list(fruit)
+    while len(path)>0:
+        obj=path.pop(0)
+        while snake[0]!=obj[0] or snake[1]!=obj[1]:
+            print(snake,":",obj)
+            if snake[0]<obj[0]:
+                snake[0]+=1
+                pkey.press("D")
+            elif snake[0]>obj[0]:
+                snake[0]-=1
+                pkey.press("A")
+            elif snake[1]>obj[1]:
+                snake[1]-=1
+                pkey.press("W")
+            elif snake[1]<obj[1]:
+                snake[1]+=1
+                pkey.press("S")
+
 
 
 def get_positions(snake,fruit,board,snake_b,encontrado=False):
@@ -86,15 +93,7 @@ def get_edges(original):
     board=cv2.Canny(original,100,300)
     board=cv2.GaussianBlur(board,(5,5),7)
     board_contour,_=cv2.findContours(board,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-
-    #Draw
-    """original=cv2.cvtColor(original,cv2.COLOR_HSV2RGB)
-    cv2.drawContours(original,board_contour,-1,0,3)
-    cv2.drawContours(original,apple_cont,-1,(50,205,50),3)W
-    cv2.drawContours(original,snake_head,-1,(50,205,50),3)
-    cv2.drawContours(original,snake_contour,-1,(0,0,255),3)"""
-
-    return original,board_contour,snake_contour,snake_head,apple_cont
+    return board_contour,snake_contour,snake_head,apple_cont
     
 
        
