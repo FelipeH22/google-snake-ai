@@ -8,6 +8,7 @@ import time
 import cv2
 
 def screen():
+    direction=1
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
     win.maximize()
@@ -19,7 +20,9 @@ def screen():
         if snake is None or fruit is None: continue
         path=a_star(tuple(snake),tuple(fruit),[[0 for j in range(16)] for i in range(18)])
         obj=path.pop(0)
-        move(tuple(snake),obj)
+        next_dir=get_direction((snake,obj))
+        invalid_movement(direction,next_dir,snake,path)
+        move(snake,obj)
 
 def move(snake,obj):
     if snake[0]<obj[0]:
@@ -33,7 +36,7 @@ def move(snake,obj):
 
 def invalid_movement(direction,next_dir,snake,path):
     invalid=(lambda current_direction,next_direction: 1 if (current_direction==1 and next_direction==2) or (current_direction==2 and next_direction==1) else \
-                2 if (current_direction==3 and next_direction==4) or (current_direction==4 and next_direction==3) else 0)(direction,next_dir)
+            2 if (current_direction==3 and next_direction==4) or (current_direction==4 and next_direction==3) else 0)(direction,next_dir)
     if invalid==1:
         if snake[1]>path[-1][1]:
             pkey.press("W")
