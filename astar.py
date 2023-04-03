@@ -1,19 +1,18 @@
 import heapq
 
-came_from=dict()
-
 def heuristic(position,final_position):
-    return abs(position[0] - final_position[0]) + abs(position[1] - final_position[1])
+    return abs(position[0]-final_position[0])+abs(position[1] -final_position[1])
 
 def a_star(initial_position,final_position,game_board):
+    came_from=dict()
     open_set=list()
     closed_set=set()
-    heapq.heappush(open_set,(0, initial_position))
-    g_score = {initial_position:0}
-    f_score = {initial_position:heuristic(initial_position,final_position)}
+    heapq.heappush(open_set,(0,initial_position))
+    g_score={initial_position:0}
+    f_score={initial_position:heuristic(initial_position,final_position)}
     while open_set:
-        current_position = heapq.heappop(open_set)[1]
-        if current_position == final_position:
+        current_position=heapq.heappop(open_set)[1]
+        if current_position==final_position:
             path=list()
             while current_position in came_from:
                 path.append(current_position)
@@ -22,8 +21,8 @@ def a_star(initial_position,final_position,game_board):
             return path
 
         closed_set.add(current_position)
-        for neighbor in [(current_position[0]+1, current_position[1]), (current_position[0]-1, current_position[1]),
-                         (current_position[0], current_position[1]+1), (current_position[0], current_position[1]-1)]:
+        for neighbor in [(current_position[0]+1,current_position[1]),(current_position[0]-1,current_position[1]),
+                         (current_position[0],current_position[1]+1),(current_position[0],current_position[1]-1)]:
             if not (0<=neighbor[0]<18 and 0<=neighbor[1]<16):
                 continue
 
