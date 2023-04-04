@@ -11,7 +11,7 @@ def screen():
     direction=1
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
-    win.maximize()
+    #win.maximize()
     time.sleep(0.5)
     pkey.press("Enter")
     time.sleep(0.2)
@@ -19,20 +19,26 @@ def screen():
         snake,fruit=extraction()
         if snake is None or fruit is None: continue
         path=a_star(tuple(snake),tuple(fruit),[[0 for j in range(16)] for i in range(18)])
-        obj=path.pop(0)
+        obj=path[0]
         next_dir=get_direction((snake,obj))
-        invalid_movement(direction,next_dir,snake,path)
-        move(snake,obj)
+        direction=invalid_movement(direction,next_dir,snake,path)
+        if direction!=0: continue
+        direction=move(snake,obj)
+        path.pop(0)
 
 def move(snake,obj):
     if snake[0]<obj[0]:
         pkey.press("D")
+        return 1
     elif snake[0]>obj[0]:
         pkey.press("A")
+        return 2
     elif snake[1]>obj[1]:
         pkey.press("W")
+        return 4
     elif snake[1]<obj[1]:
         pkey.press("S")
+        return 3
 
 def invalid_movement(direction,next_dir,snake,path):
     invalid=(lambda current_direction,next_direction: 1 if (current_direction==1 and next_direction==2) or (current_direction==2 and next_direction==1) else \
@@ -40,13 +46,18 @@ def invalid_movement(direction,next_dir,snake,path):
     if invalid==1:
         if snake[1]>path[-1][1]:
             pkey.press("W")
-        else: 
+            return 4
+        elif snake[1]<path[-1][1]: 
             pkey.press("S")
+            return 3
     elif invalid==2:
         if snake[0]<path[-1][0]:
             pkey.press("D")
-        else:
+            return 1
+        elif snake[0]>path[-1][0]:
             pkey.press("A")
+            return 2
+    else: return 0
 
 def get_direction(positions):
     #1: Right, 2: Left, 3: Down, 4: Up 
