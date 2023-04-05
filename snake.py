@@ -8,45 +8,72 @@ import time
 import cv2
 
 def screen():
+    direction=1
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
     #win.maximize()
     time.sleep(0.5)
     pkey.press("Enter")
     time.sleep(0.2)
-    while True:
-        org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
-        board,snake_body,snake_head,apple_cont=get_edges(org)
-        snake,fruit=get_positions(snake_head,apple_cont,board,snake_body)
-        move(snake,fruit)
-        if window.getActiveWindow().title!="Google - Google Chrome":
-            break  
+    while window.getActiveWindow().title=="Google - Google Chrome":
+        snake,fruit=extraction()
+        if snake is None or fruit is None: continue
+        path=a_star(tuple(snake),tuple(fruit),[[0 for j in range(16)] for i in range(18)])
+        obj=path[0]
+        next_dir=get_direction((snake,obj))
+        direction=invalid_movement(direction,next_dir,snake,path)
+        if direction!=0: continue
+        direction=move(snake,obj)
+        path.pop(0)
 
-def move(snake,fruit):
-    if snake is None or fruit is None: return
-    snake,fruit=tuple(snake),tuple(fruit)
-    path=a_star(snake,fruit,[[0 for j in range(16)] for i in range(18)])
-    snake,fruit=list(snake),list(fruit)
-    while len(path)>0:
-        obj=path.pop(0)
-        while snake[0]!=obj[0] or snake[1]!=obj[1]:
-            print(snake,":",obj)
-            if snake[0]<obj[0]:
-                snake[0]+=1
-                pkey.press("D")
-            elif snake[0]>obj[0]:
-                snake[0]-=1
-                pkey.press("A")
-            elif snake[1]>obj[1]:
-                snake[1]-=1
-                pkey.press("W")
-            elif snake[1]<obj[1]:
-                snake[1]+=1
-                pkey.press("S")
+def move(snake,obj):
+    if snake[0]<obj[0]:
+        pkey.press("D")
+        return 1
+    elif snake[0]>obj[0]:
+        pkey.press("A")
+        return 2
+    elif snake[1]>obj[1]:
+        pkey.press("W")
+        return 4
+    elif snake[1]<obj[1]:
+        pkey.press("S")
+        return 3
 
+def invalid_movement(direction,next_dir,snake,path):
+    invalid=(lambda current_direction,next_direction: 1 if (current_direction==1 and next_direction==2) or (current_direction==2 and next_direction==1) else \
+            2 if (current_direction==3 and next_direction==4) or (current_direction==4 and next_direction==3) else 0)(direction,next_dir)
+    if invalid==1:
+        if snake[1]>path[-1][1]:
+            pkey.press("W")
+            return 4
+        elif snake[1]<path[-1][1]: 
+            pkey.press("S")
+            return 3
+    elif invalid==2:
+        if snake[0]<path[-1][0]:
+            pkey.press("D")
+            return 1
+        elif snake[0]>path[-1][0]:
+            pkey.press("A")
+            return 2
+    else: return 0
 
+def get_direction(positions):
+    #1: Right, 2: Left, 3: Down, 4: Up 
+    diff=positions[1][0]-positions[0][0],positions[1][1]-positions[0][1]
+    if diff[0]>0 and diff[1]==0: return 1
+    elif diff[0]<0 and diff[1]==0: return 2
+    elif diff[0]==0 and diff[1]>0: return 3
+    else: return 4
 
-def get_positions(snake,fruit,board,snake_b,encontrado=False):
+def extraction():
+    org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
+    _,snake_body,snake_head,apple_cont=get_edges(org)
+    snake,fruit=get_positions(snake_head,apple_cont)
+    return snake,fruit
+    
+def get_positions(snake,fruit):
     snake_pos=get_relative_position(snake).astype(int)
     fruit_pos=get_relative_position(fruit).astype(int)
     if snake_pos.any()==False or fruit_pos.any()==False: return None,None
