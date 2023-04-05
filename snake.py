@@ -16,63 +16,50 @@ def screen():
     pkey.press("Enter")
     time.sleep(0.2)
     while window.getActiveWindow().title=="Google - Google Chrome":
-        snake,fruit=extraction()
+        snake,fruit,body=extraction()
         if snake is None or fruit is None: continue
         path=a_star(tuple(snake),tuple(fruit),[[0 for j in range(16)] for i in range(18)])
-        obj=path[0]
-        next_dir=get_direction((snake,obj))
-        direction=invalid_movement(direction,next_dir,snake,path)
-        if direction!=0: continue
-        direction=move(snake,obj)
-        path.pop(0)
+
+
 
 def move(snake,obj):
     if snake[0]<obj[0]:
         pkey.press("D")
-        return 1
     elif snake[0]>obj[0]:
         pkey.press("A")
-        return 2
     elif snake[1]>obj[1]:
         pkey.press("W")
-        return 4
     elif snake[1]<obj[1]:
         pkey.press("S")
-        return 3
-
-def invalid_movement(direction,next_dir,snake,path):
-    invalid=(lambda current_direction,next_direction: 1 if (current_direction==1 and next_direction==2) or (current_direction==2 and next_direction==1) else \
-            2 if (current_direction==3 and next_direction==4) or (current_direction==4 and next_direction==3) else 0)(direction,next_dir)
-    if invalid==1:
-        if snake[1]>path[-1][1]:
-            pkey.press("W")
-            return 4
-        elif snake[1]<path[-1][1]: 
-            pkey.press("S")
-            return 3
-    elif invalid==2:
-        if snake[0]<path[-1][0]:
-            pkey.press("D")
-            return 1
-        elif snake[0]>path[-1][0]:
-            pkey.press("A")
-            return 2
-    else: return 0
-
-def get_direction(positions):
-    #1: Right, 2: Left, 3: Down, 4: Up 
-    diff=positions[1][0]-positions[0][0],positions[1][1]-positions[0][1]
-    if diff[0]>0 and diff[1]==0: return 1
-    elif diff[0]<0 and diff[1]==0: return 2
-    elif diff[0]==0 and diff[1]>0: return 3
-    else: return 4
 
 def extraction():
     org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
     _,snake_body,snake_head,apple_cont=get_edges(org)
     snake,fruit=get_positions(snake_head,apple_cont)
-    return snake,fruit
+    body=get_body_position(snake_body)
+    print(body)
+    return snake,fruit,body
     
+def get_body_position(body):
+    body_pos=relative_body_pos(body)
+    if body_pos.any()==False: return None,None
+    return set([(math.ceil((x[0]-32)/48.1),math.ceil((x[1]-30)/48.1)) for x in body_pos])
+
+def relative_body_pos(snake_contour):
+    positions=list()
+    for cnt in snake_contour : 
+        approx=cv2.approxPolyDP(cnt,0.009*cv2.arcLength(cnt,True),True)
+        n=approx.ravel() 
+        i=0
+        for j in n : 
+            if i%2==0: 
+                x=n[i] 
+                y=n[i+1]
+                positions.append([x,y])
+                print(positions)
+            i+=1
+    return np.asarray(positions)
+
 def get_positions(snake,fruit):
     snake_pos=get_relative_position(snake).astype(int)
     fruit_pos=get_relative_position(fruit).astype(int)
@@ -81,7 +68,7 @@ def get_positions(snake,fruit):
     fruit_square=[math.ceil((fruit_pos[0]-32)/48.1),math.ceil((fruit_pos[1]-30)/48.1)]
     return snake_square,fruit_square
     
-def get_relative_position(contour):
+def get_relative_position(contour,case=1):
     if contour is not None:
         pos=list()
         for i in contour:
@@ -91,9 +78,9 @@ def get_relative_position(contour):
                 y=M['m01']/M['m00']
                 if x>=0 and y>=0:
                     pos.append([x,y])
-        if len(pos)>0:
+        if len(pos)>0 and case==1:
             pos=np.nanmean(np.asarray(pos),axis=0)
-            return pos
+        return np.asarray(pos)
     return np.array([])
     
 def get_edges(original):
