@@ -8,7 +8,8 @@ import time
 import cv2
 
 def screen():
-    direction=1
+    path=list()
+    obj=(3,7)
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
     #win.maximize()
@@ -16,59 +17,45 @@ def screen():
     pkey.press("Enter")
     time.sleep(0.2)
     while window.getActiveWindow().title=="Google - Google Chrome":
-        snake,fruit,body=extraction()
-        if snake is None or fruit is None: continue
-        path=a_star(tuple(snake),tuple(fruit),[[0 for j in range(16)] for i in range(18)])
+        snake,fruit,snake_contour=extraction()
+        if snake is None or fruit is None or snake_contour is None: continue
+        if not path: path=a_star(tuple(snake),tuple(fruit),[[0 if cv2.pointPolygonTest(snake_contour[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(16)] for i in range(18)])
+        move(snake,path)
+        for pos in path:
+            if cv2.pointPolygonTest(snake_contour[0],(48*(pos[0])+56,48*(pos[1])+54),False)==1.0:
+                path.remove(pos)
+                print(f"position {pos} removed. The path now is {path}. Snake is now at {snake}")
+        
+        
 
-
-
-def move(snake,obj):
+def move(snake,path):
+    obj=path[0]
+    if snake[0]==obj[0] and snake[1]==obj[1]: return obj
     if snake[0]<obj[0]:
         pkey.press("D")
-    elif snake[0]>obj[0]:
+    if snake[0]>obj[0]:
         pkey.press("A")
-    elif snake[1]>obj[1]:
+    if snake[1]>obj[1]:
         pkey.press("W")
-    elif snake[1]<obj[1]:
+    if snake[1]<obj[1]:
         pkey.press("S")
+    
 
 def extraction():
     org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
     _,snake_body,snake_head,apple_cont=get_edges(org)
     snake,fruit=get_positions(snake_head,apple_cont)
-    body=get_body_position(snake_body)
-    print(body)
-    return snake,fruit,body
-    
-def get_body_position(body):
-    body_pos=relative_body_pos(body)
-    if body_pos.any()==False: return None,None
-    return set([(math.ceil((x[0]-32)/48.1),math.ceil((x[1]-30)/48.1)) for x in body_pos])
-
-def relative_body_pos(snake_contour):
-    positions=list()
-    for cnt in snake_contour : 
-        approx=cv2.approxPolyDP(cnt,0.009*cv2.arcLength(cnt,True),True)
-        n=approx.ravel() 
-        i=0
-        for j in n : 
-            if i%2==0: 
-                x=n[i] 
-                y=n[i+1]
-                positions.append([x,y])
-                print(positions)
-            i+=1
-    return np.asarray(positions)
+    return snake,fruit,snake_body
 
 def get_positions(snake,fruit):
     snake_pos=get_relative_position(snake).astype(int)
     fruit_pos=get_relative_position(fruit).astype(int)
     if snake_pos.any()==False or fruit_pos.any()==False: return None,None
-    snake_square=[math.ceil((snake_pos[0]-32)/48.1),math.ceil((snake_pos[1]-30)/48.1)]
-    fruit_square=[math.ceil((fruit_pos[0]-32)/48.1),math.ceil((fruit_pos[1]-30)/48.1)]
+    snake_square=[math.ceil((snake_pos[0]-80)/48.1),math.ceil((snake_pos[1]-78)/48.1)]
+    fruit_square=[math.ceil((fruit_pos[0]-80)/48.1),math.ceil((fruit_pos[1]-78)/48.1)]
     return snake_square,fruit_square
     
-def get_relative_position(contour,case=1):
+def get_relative_position(contour):
     if contour is not None:
         pos=list()
         for i in contour:
@@ -78,7 +65,7 @@ def get_relative_position(contour,case=1):
                 y=M['m01']/M['m00']
                 if x>=0 and y>=0:
                     pos.append([x,y])
-        if len(pos)>0 and case==1:
+        if len(pos)>0:
             pos=np.nanmean(np.asarray(pos),axis=0)
         return np.asarray(pos)
     return np.array([])
@@ -88,8 +75,8 @@ def get_edges(original):
     original=cv2.cvtColor(original,cv2.COLOR_BGR2HSV)
     mask=cv2.inRange(original,np.array([110,50,50]),np.array([130,255,255]))
     body=cv2.bitwise_and(original,original,mask=mask)
-    body=cv2.Canny(body,20,100)
-    snake_contour,_=cv2.findContours(body,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
+    body=cv2.Canny(body,200,500)
+    snake_contour,_=cv2.findContours(body,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 
     #Get apple contour
     mask=cv2.inRange(original,np.array([-10,100,100]),np.array([10,225,255]))
