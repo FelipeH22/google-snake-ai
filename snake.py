@@ -16,7 +16,7 @@ def screen():
     pkey.press("Enter")
     time.sleep(0.2)
     snake,apple,body=get_snake(),get_apple(),get_body_contour()
-    f_board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(16)] for i in range(18)]).transpose()
+    f_board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
     while window.getActiveWindow().title=="Google - Google Chrome":
         snake=tuple(snake)
         apple=get_apple()
@@ -34,24 +34,21 @@ def screen():
             pkey.press("W")
             last_key="W"
         body=get_body_contour()
-        board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(16)] for i in range(18)]).transpose()
+        print(len(body))
+        board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
         print(f_board,board)
         snake=list(snake)
-        snake=changes(np.where(board-f_board==1),last_key)
+        snake=changes(np.where(board-f_board==1),last_key,snake)
         f_board=board
         print(snake)
 
-def changes(diff,last_key):
-    if len(diff[0])==0: return 
+def changes(diff,last_key,snake):
+    if len(diff[0])==0: return
     if len(diff[0])>1:
-        if last_key=="D":
-            return [int(max(diff[1])),int(diff[0][0])]
-        if last_key=="A":
-            return [int(min(diff[1])),int(diff[0][0])]
-        if last_key=="W":
-            return [int(diff[1][0]),int(min(diff[0]))]
-        if last_key=="S":
-            return [int(diff[1][0]),int(max(diff[0]))]
+        if last_key=="D": return [int(max(diff[1])),int(diff[0][0])]
+        if last_key=="A": return [int(min(diff[1])),int(diff[0][0])]
+        if last_key=="W": return [int(diff[1][0]),int(min(diff[0]))]
+        if last_key=="S": return [int(diff[1][0]),int(max(diff[0]))]
     if len(diff[0])==1: return [int(diff[1]),int(diff[0])]
 
 
