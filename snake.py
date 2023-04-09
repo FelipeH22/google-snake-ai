@@ -9,93 +9,111 @@ import cv2
 
 def screen():
     path=list()
-    obj=(3,7)
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
-    #win.maximize()
+    win.maximize()
     time.sleep(0.5)
     pkey.press("Enter")
     time.sleep(0.2)
+    snake,apple,body=get_snake(),get_apple(),get_body_contour()
+    f_board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(16)] for i in range(18)]).transpose()
     while window.getActiveWindow().title=="Google - Google Chrome":
-        snake,fruit,snake_contour=extraction()
-        if snake is None or fruit is None or snake_contour is None: continue
-        if not path: path=a_star(tuple(snake),tuple(fruit),[[0 if cv2.pointPolygonTest(snake_contour[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(16)] for i in range(18)])
-        move(snake,path)
-        for pos in path:
-            if cv2.pointPolygonTest(snake_contour[0],(48*(pos[0])+56,48*(pos[1])+54),False)==1.0:
-                path.remove(pos)
-                print(f"position {pos} removed. The path now is {path}. Snake is now at {snake}")
-        
-        
+        snake=tuple(snake)
+        apple=get_apple()
+        path=a_star(snake,apple,f_board)
+        if snake[0]<path[0][0]:
+            pkey.press("D")
+            last_key="D"
+        if snake[1]<path[0][1]:
+            pkey.press("S")
+            last_key="S"
+        if snake[0]>path[0][0]:
+            pkey.press("A")
+            last_key="A"
+        if snake[1]>path[0][1]: 
+            pkey.press("W")
+            last_key="W"
+        body=get_body_contour()
+        board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(16)] for i in range(18)]).transpose()
+        print(f_board,board)
+        snake=list(snake)
+        snake=changes(np.where(board-f_board==1),last_key)
+        f_board=board
+        print(snake)
 
-def move(snake,path):
-    obj=path[0]
-    if snake[0]==obj[0] and snake[1]==obj[1]: return obj
-    if snake[0]<obj[0]:
-        pkey.press("D")
-    if snake[0]>obj[0]:
-        pkey.press("A")
-    if snake[1]>obj[1]:
-        pkey.press("W")
-    if snake[1]<obj[1]:
-        pkey.press("S")
-    
+def changes(diff,last_key):
+    if len(diff[0])==0: return 
+    if len(diff[0])>1:
+        if last_key=="D":
+            return [int(max(diff[1])),int(diff[0][0])]
+        if last_key=="A":
+            return [int(min(diff[1])),int(diff[0][0])]
+        if last_key=="W":
+            return [int(diff[1][0]),int(min(diff[0]))]
+        if last_key=="S":
+            return [int(diff[1][0]),int(max(diff[0]))]
+    if len(diff[0])==1: return [int(diff[1]),int(diff[0])]
 
-def extraction():
-    org=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
-    _,snake_body,snake_head,apple_cont=get_edges(org)
-    snake,fruit=get_positions(snake_head,apple_cont)
-    return snake,fruit,snake_body
 
-def get_positions(snake,fruit):
-    snake_pos=get_relative_position(snake).astype(int)
-    fruit_pos=get_relative_position(fruit).astype(int)
-    if snake_pos.any()==False or fruit_pos.any()==False: return None,None
+def get_snake(last=(4,7)):
+    eyes=get_eyes_contour()
+    snake=get_snake_position(eyes,last)
+    return tuple(snake)
+
+def get_apple(last=(12,7)):
+    fruit=get_apple_contour()
+    apple=get_apple_position(fruit,last)
+    return tuple(apple)
+
+def get_snake_position(eyes_contour,last_snake):
+    snake_pos=get_relative_position(eyes_contour).astype(int)
+    if snake_pos.any()==False: return last_snake
     snake_square=[math.ceil((snake_pos[0]-80)/48.1),math.ceil((snake_pos[1]-78)/48.1)]
-    fruit_square=[math.ceil((fruit_pos[0]-80)/48.1),math.ceil((fruit_pos[1]-78)/48.1)]
-    return snake_square,fruit_square
+    return snake_square
+
+def get_apple_position(apple_contour,last_apple):
+    apple_pos=get_relative_position(apple_contour).astype(int)
+    if apple_pos.any()==False: return last_apple
+    apple_square=[math.ceil((apple_pos[0]-80)/48.1),math.ceil((apple_pos[1]-78)/48.1)]
+    return apple_square
     
-def get_relative_position(contour):
-    if contour is not None:
-        pos=list()
-        for i in contour:
-            M=cv2.moments(i)
-            if M['m00']!=0:
-                x=M['m10']/M['m00']
-                y=M['m01']/M['m00']
-                if x>=0 and y>=0:
-                    pos.append([x,y])
-        if len(pos)>0:
-            pos=np.nanmean(np.asarray(pos),axis=0)
-        return np.asarray(pos)
-    return np.array([])
-    
-def get_edges(original):
-    #Get contour of the snake body
+def get_body_contour():
+    original=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
     original=cv2.cvtColor(original,cv2.COLOR_BGR2HSV)
     mask=cv2.inRange(original,np.array([110,50,50]),np.array([130,255,255]))
     body=cv2.bitwise_and(original,original,mask=mask)
     body=cv2.Canny(body,200,500)
     snake_contour,_=cv2.findContours(body,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    return snake_contour
 
-    #Get apple contour
+def get_apple_contour():
+    original=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
+    original=cv2.cvtColor(original,cv2.COLOR_BGR2HSV)
     mask=cv2.inRange(original,np.array([-10,100,100]),np.array([10,225,255]))
     apple=cv2.bitwise_and(original,original,mask=mask)
     apple=cv2.Canny(apple,20,100)
-    apple_cont,_=cv2.findContours(apple,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
-    
-    #Get contour of the eyes
+    apple_contour,_=cv2.findContours(apple,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
+    return apple_contour
+
+def get_eyes_contour():
+    original=cv2.cvtColor(np.array(ImageGrab.grab(bbox=(10,230,900,1000))),cv2.COLOR_BGR2RGB)
+    original=cv2.cvtColor(original,cv2.COLOR_BGR2HSV)
     mask=cv2.inRange(original,np.array([0,0,255-15]),np.array([255,15,255]))
     head=cv2.bitwise_and(original,original,mask=mask)
     head=cv2.Canny(head,0,100)
-    snake_head,_=cv2.findContours(head,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
+    eyes_contour,_=cv2.findContours(head,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
+    return eyes_contour
 
-    #Get contour of the board
-    board=cv2.Canny(original,100,300)
-    board=cv2.GaussianBlur(board,(5,5),7)
-    board_contour,_=cv2.findContours(board,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    return board_contour,snake_contour,snake_head,apple_cont
-    
-
-       
+def get_relative_position(contour):
+    pos=list()
+    for c in contour:
+        M=cv2.moments(c)
+        if M['m00']==0: continue
+        x=int(M['m10']/M['m00'])
+        y=int(M['m01']/M['m00'])
+        pos.append([x,y])
+    if len(pos)>0:
+        pos=np.nanmean(np.asarray(pos),axis=0)
+    return np.asarray(pos)
+        
 screen()

@@ -1,9 +1,10 @@
 import heapq
 
 def heuristic(position,final_position):
-    return abs(position[0]-final_position[0])+abs(position[1] -final_position[1])
+    return abs(position[0]-final_position[0])+abs(position[1]-final_position[1]) #Manhattan distance
 
 def a_star(initial_position,final_position,game_board):
+    if initial_position is None or final_position is None or game_board is None: return
     came_from=dict()
     open_set=list()
     closed_set=set()
@@ -26,7 +27,7 @@ def a_star(initial_position,final_position,game_board):
             if not (0<=neighbor[0]<18 and 0<=neighbor[1]<16):
                 continue
 
-            if game_board[neighbor[0]][neighbor[1]]==1:
+            if game_board[neighbor[1],neighbor[0]]==1:
                 continue
 
             tentative_g_score = g_score[current_position]+1
@@ -38,4 +39,4 @@ def a_star(initial_position,final_position,game_board):
                 f_score[neighbor]=tentative_g_score +heuristic(neighbor,final_position)
                 heapq.heappush(open_set,(f_score[neighbor],neighbor))
                 came_from[neighbor]=current_position
-    return None
+    return 
