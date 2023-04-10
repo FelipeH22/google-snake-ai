@@ -18,9 +18,9 @@ def screen():
     snake,apple,body=get_snake(),get_apple(),get_body_contour()
     f_board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
     while window.getActiveWindow().title=="Google - Google Chrome":
-        snake=tuple(snake)
         apple=get_apple()
         path=a_star(snake,apple,f_board)
+        print(path)
         if snake[0]<path[0][0]:
             pkey.press("D")
             last_key="D"
@@ -34,16 +34,14 @@ def screen():
             pkey.press("W")
             last_key="W"
         body=get_body_contour()
-        print(len(body))
-        board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
-        print(f_board,board)
-        snake=list(snake)
-        snake=changes(np.where(board-f_board==1),last_key,snake)
+        a=[len(x) for x in body]
+        board=np.array([[0 if cv2.pointPolygonTest(body[a.index(max(a))],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
+        snake=tuple(changes(np.where(board-f_board==1),last_key,snake,f_board,board))
         f_board=board
-        print(snake)
+        path.pop(0)
 
-def changes(diff,last_key,snake):
-    if len(diff[0])==0: return
+def changes(diff,last_key,snake,f_board,board):
+    if len(diff[0])==0: return get_snake(snake)
     if len(diff[0])>1:
         if last_key=="D": return [int(max(diff[1])),int(diff[0][0])]
         if last_key=="A": return [int(min(diff[1])),int(diff[0][0])]
