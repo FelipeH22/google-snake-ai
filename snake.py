@@ -8,7 +8,6 @@ import time
 import cv2
 
 def screen():
-    path=list()
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
     win.maximize()
@@ -20,7 +19,6 @@ def screen():
     while window.getActiveWindow().title=="Google - Google Chrome":
         apple=get_apple()
         path=a_star(snake,apple,f_board)
-        print(path)
         if snake[0]<path[0][0]:
             pkey.press("D")
             last_key="D"
@@ -36,12 +34,14 @@ def screen():
         body=get_body_contour()
         a=[len(x) for x in body]
         board=np.array([[0 if cv2.pointPolygonTest(body[a.index(max(a))],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
+        print(board)
         snake=tuple(changes(np.where(board-f_board==1),last_key,snake,f_board,board))
         f_board=board
-        path.pop(0)
-
+        
 def changes(diff,last_key,snake,f_board,board):
-    if len(diff[0])==0: return get_snake(snake)
+    if len(diff[0])==0:
+        print("Esto no debe aparecer!")
+        return get_snake(snake)
     if len(diff[0])>1:
         if last_key=="D": return [int(max(diff[1])),int(diff[0][0])]
         if last_key=="A": return [int(min(diff[1])),int(diff[0][0])]
@@ -77,7 +77,7 @@ def get_body_contour():
     original=cv2.cvtColor(original,cv2.COLOR_BGR2HSV)
     mask=cv2.inRange(original,np.array([110,50,50]),np.array([130,255,255]))
     body=cv2.bitwise_and(original,original,mask=mask)
-    body=cv2.Canny(body,200,500)
+    body=cv2.Canny(body,0,100)
     snake_contour,_=cv2.findContours(body,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     return snake_contour
 
