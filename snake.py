@@ -10,43 +10,71 @@ import cv2
 def screen():
     win=window.getWindowsWithTitle('Google - Google Chrome')[0]
     win.activate()
-    win.maximize()
+    #win.maximize()
     time.sleep(0.5)
     pkey.press("Enter")
     time.sleep(0.2)
     snake,apple,body=get_snake(),get_apple(),get_body_contour()
     f_board=np.array([[0 if cv2.pointPolygonTest(body[0],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
+    f_board[apple[1],apple[0]]=2
     while window.getActiveWindow().title=="Google - Google Chrome":
         apple=get_apple()
         path=a_star(snake,apple,f_board)
-        if snake[0]<path[0][0]:
-            pkey.press("D")
-            last_key="D"
-        if snake[1]<path[0][1]:
-            pkey.press("S")
-            last_key="S"
-        if snake[0]>path[0][0]:
-            pkey.press("A")
-            last_key="A"
-        if snake[1]>path[0][1]: 
-            pkey.press("W")
-            last_key="W"
+        if path==list() or path is None: continue
+        last_key=move(snake,path)
         body=get_body_contour()
         a=[len(x) for x in body]
         board=np.array([[0 if cv2.pointPolygonTest(body[a.index(max(a))],(48*(i)+56,48*(j)+54),False)!=1.0 else 1 for j in range(15)] for i in range(17)]).transpose()
-        print(board)
-        snake=tuple(changes(np.where(board-f_board==1),last_key,snake,f_board,board))
-        f_board=board
-        
-def changes(diff,last_key,snake,f_board,board):
+        if np.any(board-f_board==1)==False or np.array_equal(f_board,board): continue
+        else:
+            snake=tuple(changes(np.where(board-f_board==1),last_key,snake))
+            f_board=board
+        #print(snake,path)
+
+def move(snake,path):                
+    #Average movement
+    if snake[0]<path[0][0]:
+        pkey.press("D")
+        return "D"
+    elif snake[1]<path[0][1]:
+        pkey.press("S")
+        return "S"
+    elif snake[0]>path[0][0]:
+        pkey.press("A")
+        return "A"
+    elif snake[1]>path[0][1]: 
+        pkey.press("W")
+        return "W"
+
+def check_crash(snake,path,last_key):
+    #Imminent crash
+    if snake[0]==0 or snake[0]==16:
+        print("Aiuda me estrello")
+        if path[-1][1]>=snake[1]:
+            pkey.press("S")
+            return "S"
+        elif path[-1][1]<snake[1]:
+            pkey.press("W")
+            return "W"
+    if snake[1]==0 or snake[1]==14:
+        print("Aiuda me estrello")
+        if path[-1][0]>=snake[0]:
+            pkey.press("D")
+            return "D"
+        elif path[-1][0]<snake[0]:
+            pkey.press("A")
+            return "A"
+    return last_key
+
+def changes(diff,last_key,snake):
     if len(diff[0])==0:
         print("Esto no debe aparecer!")
         return get_snake(snake)
     if len(diff[0])>1:
-        if last_key=="D": return [int(max(diff[1])),int(diff[0][0])]
-        if last_key=="A": return [int(min(diff[1])),int(diff[0][0])]
-        if last_key=="W": return [int(diff[1][0]),int(min(diff[0]))]
-        if last_key=="S": return [int(diff[1][0]),int(max(diff[0]))]
+        if last_key=="D": return [int(max(diff[1])),int(diff[0][list(diff[1]).index(max(diff[1]))])]
+        if last_key=="A": return [int(min(diff[1])),int(diff[0][list(diff[1]).index(max(diff[1]))])]
+        if last_key=="W": return [int(diff[1][list(diff[0]).index(min(diff[0]))]),int(min(diff[0]))]
+        if last_key=="S": return [int(diff[1][list(diff[0]).index(min(diff[0]))]),int(max(diff[0]))]
     if len(diff[0])==1: return [int(diff[1]),int(diff[0])]
 
 
