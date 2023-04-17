@@ -20,7 +20,7 @@ def screen():
     while window.getActiveWindow().title=="Google - Google Chrome":
         apple=get_apple()
         path=a_star(snake,apple,f_board)
-        if path==list(): continue
+        if path==list() or path is None: continue
         last_key=move(snake,path)
         body=get_body_contour()
         a=[len(x) for x in body]
@@ -28,22 +28,43 @@ def screen():
         if np.any(board-f_board==1)==False or np.array_equal(f_board,board): continue
         else:
             snake=tuple(changes(np.where(board-f_board==1),last_key,snake))
+            last_key=check_crash(snake,path,last_key)
             f_board=board
-        print(snake,path)
+        #print(snake,path)
 
-def move(snake,path):
+def move(snake,path):                
+    #Average movement
     if snake[0]<path[0][0]:
         pkey.press("D")
-        last_key="D"
+        return "D"
     elif snake[1]<path[0][1]:
         pkey.press("S")
-        last_key="S"
+        return "S"
     elif snake[0]>path[0][0]:
         pkey.press("A")
-        last_key="A"
+        return "A"
     elif snake[1]>path[0][1]: 
         pkey.press("W")
-        last_key="W"        
+        return "W"
+
+def check_crash(snake,path,last_key):
+    #Imminent crash
+    if snake[0]==0 or snake[0]==16:
+        print("Aiuda me estrello")
+        if path[-1][1]>=snake[1]:
+            pkey.press("S")
+            return "S"
+        elif path[-1][1]<snake[1]:
+            pkey.press("W")
+            return "W"
+    if snake[1]==0 or snake[1]==14:
+        print("Aiuda me estrello")
+        if path[-1][0]>=snake[0]:
+            pkey.press("D")
+            return "D"
+        elif path[-1][0]<snake[0]:
+            pkey.press("A")
+            return "A"
     return last_key
 
 def changes(diff,last_key,snake):
