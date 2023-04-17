@@ -28,7 +28,6 @@ def screen():
         if np.any(board-f_board==1)==False or np.array_equal(f_board,board): continue
         else:
             snake=tuple(changes(np.where(board-f_board==1),last_key,snake))
-            last_key=check_crash(snake,path,last_key)
             f_board=board
         #print(snake,path)
 
